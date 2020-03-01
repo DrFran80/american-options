@@ -2,7 +2,7 @@
 from Claim import Claim
 
 class AmericanOption( Claim ):
-    def __init__(self, strike):
+    def __init__(self, strike, maturity, underlying):
         self.strike = strike
     
     def payoff_ifexercise( self, spot_price ):
