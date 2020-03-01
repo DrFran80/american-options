@@ -2,6 +2,8 @@
 import numpy as np
 import math
 
+from AmericanOption import AmericanPut
+
 def create_sample_path( spot_price, T, sigma, risk_free, intervals=10000):
     path = np.zeros(T*intervals+1)
     dt = 1 / intervals
@@ -20,23 +22,19 @@ def create_sample_matrix( spot_price, T, sigma, risk_free, intervals = 10000, sa
     
 sample_matrix = create_sample_matrix( 1, 2, 0.02, 0.06, intervals = 100, samples =10)
 
+def payoff_ifexercise( prices, claim ):
+    return [claim.payoff_ifexercise(p) for p in prices]
 
-def call_price_payoff(spot_price, strike):
-    return float( max( spot_price-strike, 0 ) )
+put_option = AmericanPut( 1.1 )
     
-def put_price_payoff(spot_price, strike):
-    return float( max( strike-spot_price, 0 ) )
-    
-vect_call_price_payoff = np.vectorize(call_price_payoff)
-vect_put_price_payoff = np.vectorize(put_price_payoff)
+payoff_at_T = payoff_ifexercise( sample_matrix[:,-1], put_option)
 
-def payoff_ifexercise( prices, strike, isCall = False):
-    return vect_call_price_payoff(prices, strike) if isCall else vect_put_price_payoff(prices, strike)
-    
-payoff_at_T = payoff_ifexercise( sample_matrix[:,-1], 1.1)
-
+print(sample_matrix[:,-1])
 print (payoff_at_T)
 
-def filter_in_the_money( prices, strike, call=False ):
-    prices[ payoff_ifexercise( prices, strike)]
-
+def filter_in_the_money( prices, claim):
+    return [ p if claim.payoff_ifexercise(p)> 0 else 0 for p in prices]
+#
+filterin = filter_in_the_money( sample_matrix[:,-1], put_option)
+#
+print(filterin)
