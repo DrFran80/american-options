@@ -25,14 +25,27 @@ def payoff_ifexercise( prices, claim ):
 def filter_in_the_money( prices, claim):
     return np.array([ p if claim.payoff_ifexercise(p)> 0 else 0 for p in prices])
 
-def cond_expec_byOLS( prices_in_the_money, discounted_payoff):
+def extend_vector( prices_in_the_money, stop_times ):
+    st = np.zeros(len(prices_in_the_money), dtype=bool)
+    j = 0
+    for i in range(len(prices_in_the_money)):
+        if prices_in_the_money[i]> 0 :
+            st[i] = stop_times[j]
+            j +=1
+        else:
+            st[i] = False
+    return st
+
+def stop_timeatT( prices, claim):
+    return np.array([ bool(p) for p in filter_in_the_money(prices, claim) ], dtype =bool)
+
+def stop_timesatK( prices_in_the_money, discounted_payoff, claim):
     X = prices_in_the_money[ prices_in_the_money > 0]
     y = discounted_payoff [prices_in_the_money > 0]
-    X = sm.add_constant(X)
-    model = sm.OLS(y,X).fit()
-    return model.predict(X)
-#    predictions = model.predict(X)
-#    return extend_EYX( prices_in_the_money, predictions )
+    X1 = sm.add_constant(X)
+    EYX = sm.OLS(y,X1).fit().predict(X1)
+    stop_times =  np.array( [ EYX[i] > claim.payoff_ifexercise(X[i]) for i in range(len(X))] )
+    return extend_vector( prices_in_the_money, stop_times )
 
 def discounted_payoff( payoff_matrix, risk_free ):
     if payoff_matrix.ndim == 1:
@@ -43,21 +56,8 @@ def discounted_payoff( payoff_matrix, risk_free ):
         discount_factor = (1+risk_free) ** ((-1)*(i+1))
         discounted_payoff += np.array([p * discount_factor for p in payoff_matrix[:,-i]])
     return discounted_payoff
-        
-        
-    
+ 
 
-
-def extend_EYX( prices_in_the_money, predictions ):
-    EYX = np.zeros(len(prices_in_the_money))
-    j = 0
-    for i in range(len(prices_in_the_money)):
-        if prices_in_the_money[i]> 0 :
-            EYX[i] = predictions[j]
-            j +=1
-        else:
-            EYX[i] = 0
-    return EYX
     
 
 

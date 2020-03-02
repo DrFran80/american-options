@@ -8,15 +8,15 @@ put_option = AmericanPut( 1.15 )
     
 payoff_at_T = payoff_ifexercise( sample_matrix[:,-1], put_option)
 
-print(sample_matrix[:,-1])
-print (payoff_at_T)
-
 filterin = filter_in_the_money( sample_matrix[:,-2], put_option)
 #
 print(filterin)
 
-EYX = cond_expec_byOLS( filterin, payoff_at_T)
+stop_times = stop_timesatK( filterin, payoff_at_T, put_option)
 
-print (EYX)
+print (stop_times)
 
-dp = discounted_payoff( EYX, 0.06)
+stT = stop_timeatT( sample_matrix[:,-1], put_option)
+print (stT)
+
+stop_time_matrix = np.column_stack((stop_times, stT))
