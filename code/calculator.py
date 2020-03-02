@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from lib import extend_vector
 import numpy as np
 import math
 import statsmodels.api as sm
@@ -20,27 +21,23 @@ def create_sample_matrix( spot_price, T, sigma, risk_free, intervals = 10000, sa
     return sample_matrix
 
 def payoff_ifexercise( prices, claim ):
+    '''The payoff of the claim of a set of prices at time t'''
     return np.array([claim.payoff_ifexercise(p) for p in prices])
 
 def filter_in_the_money( prices, claim):
+    '''Returns the prices at time t if they are in the money, else returns 0'''
     return np.array([ p if claim.payoff_ifexercise(p)> 0 else 0 for p in prices])
 
-def extend_vector( prices_in_the_money, stop_times ):
-    st = np.zeros(len(prices_in_the_money), dtype=bool)
-    j = 0
-    for i in range(len(prices_in_the_money)):
-        if prices_in_the_money[i]> 0 :
-            st[i] = stop_times[j]
-            j +=1
-        else:
-            st[i] = False
-    return st
+def stop_timesat_T( prices, claim):
+    ''' Returns the stoptime vector at maturity:
+        True if the claim value is positive, else False
+    '''
+    return np.array([ claim.payoff_ifexercise(p)> 0 for p in prices ], dtype =bool)
 
-def stop_timeatT( prices, claim):
-    return np.array([ bool(p) for p in filter_in_the_money(prices, claim) ], dtype =bool)
-
-def stop_timesatK( prices_in_the_money, discounted_payoff, claim):
-    X = prices_in_the_money[ prices_in_the_money > 0]
+def stop_timesat_t( prices, discounted_payoff, claim):
+    ''' Receives a vector of prices at time t only if they are in 
+    '''
+    X = filter_in_the_money(prices, claim)
     y = discounted_payoff [prices_in_the_money > 0]
     X1 = sm.add_constant(X)
     EYX = sm.OLS(y,X1).fit().predict(X1)
@@ -58,7 +55,6 @@ def discounted_payoff( payoff_matrix, risk_free ):
     return discounted_payoff
  
 
-    
 
 
 
