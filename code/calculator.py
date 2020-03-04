@@ -20,29 +20,24 @@ def create_sample_matrix( spot_price, T, sigma, risk_free, intervals = 10000, sa
         sample_matrix[i,:] = create_sample_path( spot_price, T, sigma, risk_free, intervals)
     return sample_matrix
 
-def payoff_ifexercise( prices, claim ):
+def payoff_ifexercise( prices_atT, claim ):
     '''The payoff of the claim of a set of prices at time t'''
-    return np.array([claim.payoff_ifexercise(p) for p in prices])
+    return np.array([claim.payoff_ifexercise(p) for p in prices_atT])
 
-def filter_in_the_money( prices, claim):
-    '''Returns the prices at time t if they are in the money, else returns 0'''
-    return np.array([ p if claim.payoff_ifexercise(p)> 0 else 0 for p in prices])
+def paths_in_the_money( prices_atT, claim):
+    '''  True if the claim value is positive, else False'''
+    return np.array([ claim.payoff_ifexercise(p)> 0 for p in prices_atT ], dtype =bool)
 
-def stop_timesat_T( prices, claim):
-    ''' Returns the stoptime vector at maturity:
-        True if the claim value is positive, else False
-    '''
-    return np.array([ claim.payoff_ifexercise(p)> 0 for p in prices ], dtype =bool)
-
-def stop_timesat_t( prices, discounted_payoff, claim):
+def stop_timesat_t( prices_atT, discounted_payoff, claim):
     ''' Receives a vector of prices at time t only if they are in 
     '''
-    X = filter_in_the_money(prices, claim)
-    y = discounted_payoff [prices_in_the_money > 0]
+    paths = paths_in_the_money( prices_atT, claim) 
+    X = np.array( [ p for i,p in enumerate(prices_atT) if paths[i] ] )
+    y = np.array( [ dp for i,dp in enumerate(discounted_payoff) if paths[i] ] )
     X1 = sm.add_constant(X)
     EYX = sm.OLS(y,X1).fit().predict(X1)
-    stop_times =  np.array( [ EYX[i] > claim.payoff_ifexercise(X[i]) for i in range(len(X))] )
-    return extend_vector( prices_in_the_money, stop_times )
+    stop_times =  np.array( [ claim.payoff_ifexercise(X[i]) > EYX[i] for i in range(len(X))] )
+    return extend_vector(stop_times, paths)
 
 def discounted_payoff( payoff_matrix, risk_free ):
     if payoff_matrix.ndim == 1:
