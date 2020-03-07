@@ -5,6 +5,7 @@ from calculator import (create_stop_time_matrix,
                         discounted_payoff
                         )
 from simulation import create_prices_matrix
+from EuropeanOption import euro_vanilla_call
 
 from AmericanOption import AmericanPut
 import numpy as np
@@ -19,10 +20,19 @@ import numpy as np
 #                         (1.00,0.92,0.84,1.01),
 #                         (1.00,0.88,1.22,1.34)])
 
-prices_matrix = create_prices_matrix( 36, 1, 0.4, 0.06, intervals=10000, samples=1000)
-put_option = AmericanPut( 40 )
+steps = 51
+risk_free = .06
+prices_matrix = create_prices_matrix( 50, 1, 0.25, 0.05, intervals=1000, samples=1000)
+put_option = AmericanPut( 100 )
 
-#stop_times = create_stop_time_matrix( prices_matrix, put_option, .06)
-#cash_flow_matrix = create_payoff_matrix(prices_matrix[:,1:], stop_times, put_option)
-#payoff = discounted_payoff(cash_flow_matrix,0.06)
-#value = np.average(payoff)
+prices_matrix2 = prices_matrix[:,::20]
+step_risk_free = ( (1 + risk_free) ** (1/steps) ) - 1
+
+stop_times = create_stop_time_matrix( prices_matrix2, put_option, .06, steps=steps)
+cash_flow_matrix = create_payoff_matrix(prices_matrix2[:,1:], stop_times, put_option)
+payoff = discounted_payoff(cash_flow_matrix, step_risk_free)
+value = np.average(payoff)
+
+european_payoff = np.array( [ put_option.payoff_ifexercise(p) for p in prices_matrix[:,-1]])
+european = np.average( european_payoff ) / ( (1+risk_free) **2)
+european2 = euro_vanilla_call( 36, 40, 1, 0.06, 0.2)

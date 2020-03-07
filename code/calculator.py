@@ -63,14 +63,15 @@ def clean_stop_time_matrix(partial_stop_times, stop_times_at_t):
     return np.column_stack(( stop_times_at_t,new_partial_stop_times ))
         
  
-def create_stop_time_matrix( prices_matrix, claim, risk_free):
+def create_stop_time_matrix( prices_matrix, claim, risk_free, steps):
     _, ncols = prices_matrix.shape
+    step_risk_free = ( (1 + risk_free) ** (1/steps) ) - 1
     for t in range(1,ncols): 
         if t == 1:
             partial_stop_times = paths_in_the_money (prices_matrix[:,-t], claim)
         else:
             payoff_matrix = create_payoff_matrix (prices_matrix[:,-(t-1):], partial_stop_times, claim)
-            d_payoff = discounted_payoff( payoff_matrix, risk_free )
+            d_payoff = discounted_payoff( payoff_matrix, step_risk_free )
             stop_times_at_t = stop_timesat_t( prices_matrix[:,-t], d_payoff, claim)
             partial_stop_times = clean_stop_time_matrix(partial_stop_times, stop_times_at_t)
     return partial_stop_times
